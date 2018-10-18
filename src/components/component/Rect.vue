@@ -2,14 +2,17 @@
   <div class="img-container">
     <svg ref="svg" class="svg-container" :width="img.width*scaleRect" :height="img.height*scaleRect" style="cursor:crosshair">
       <v-line :lineObj="line"/>
-      <rect v-for="( item, index ) in rects"
+      <g>
+        <rect v-for="( item, index ) in rects"
         :key="index"
         :x="item.x*scaleRect" :y="item.y*scaleRect"
         :width="item.w*scaleRect" :height="item.h*scaleRect"
         @click.stop.prevent="fixPointsHandle(index)"
         @mousedown.stop.prevent="moveRectStart(index, $event)"
-        @mouseup.stop.prevent="moveRectEnd"
-        style="fill:blue;stroke:lightgreen;stroke-width:2;fill-opacity:0.1;stroke-opacity:0.9;cursor:move"/>
+        @mouseup="moveRectEnd"
+        :fill="svgColor" :stroke="svgColor"
+        style="stroke-width:2;fill-opacity:0.1;stroke-opacity:0.9;cursor:move"/>
+      </g>
         <v-editpoint :fixedPoints="fixPoints" :activeRectIndex="activeRectIndex" @funcStart="changeRectPointStart" @funcEnd="changeRectPointEnd" :scaleRect="scaleRect"/>
     </svg>
     <img id="image" :src="img.url" :width="img.width*scaleRect" :height="img.height*scaleRect" alt="">
@@ -20,6 +23,7 @@
 import imgUrl from '../../assets/test.jpg'
 import line from './utils/Line'
 import EditPoint from './utils/EditPoint'
+import vm from '@/utils/vm'
 export default {
   data () {
     return {
@@ -49,16 +53,25 @@ export default {
         initY: 0,
         index: 0
       },
-      scaleRect: 1 // 矩形缩放比例
+      scaleRect: 1, // 矩形缩放比例
+      svgColor: '#000000' // 边框颜色
     }
   },
   components: {
     'v-line': line,
     'v-editpoint': EditPoint
   },
+  created () {
+    // 获取其他组件传来的信息
+    vm.$on('deleteRect', () => {
+      this.deleteRect()
+    })
+    vm.$on('changeColor', (color) => {
+      this.svgColor = color
+    })
+  },
   mounted () {
     let svgElem = this.$refs.svg
-
     svgElem.addEventListener('mousedown', (event) => {
       this.isDown = true
       let initX = event.offsetX
@@ -119,12 +132,19 @@ export default {
       this.fixDown = false
     })
     svgElem.addEventListener('mousewheel', (event) => {
+      event.stopPropagation()
+      event.preventDefault()
       // event.wheelDeltaY的正负表示放大还是缩小
       if (event.wheelDeltaY > 0) {
         this.scaleRect += 0.1
       } else if (event.wheelDeltaY < 0 && this.img.width * this.scaleRect > 320) {
         this.scaleRect -= 0.1
       }
+    })
+    // 鼠标离开svg图层后退出编辑状态
+    svgElem.addEventListener('mouseleave', (event) => {
+      this.isDown = false
+      this.fixDown = false
     })
   },
   methods: {
@@ -263,7 +283,27 @@ export default {
       this.isDown = false
       this.isMove = false
       this.fixDown = false
+    },
+    deleteRect () {
+      let index = this.activeRectIndex
+      console.log(index)
+      this.isDown = false
+      if (index === -1) {
+        alert('请先选择框再进行操作')
+      } else {
+        if (confirm('确认删除?')) {
+          this.activeRectIndex = -1
+          this.rects.splice(index, 1)
+        }
+      }
     }
+  },
+  destroyed () { // 组件销毁时移除所有事件
+    let svgElem = this.$refs.svg
+    svgElem.removeEventListener('mousedown', e => e.stopPropagation(), false)
+    svgElem.removeEventListener('mousemove', e => e.stopPropagation(), false)
+    svgElem.removeEventListener('mouseup', e => e.stopPropagation(), false)
+    svgElem.removeEventListener('mouseleave', e => e.stopPropagation(), false)
   }
 }
 </script>
