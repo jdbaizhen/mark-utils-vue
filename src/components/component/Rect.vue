@@ -1,37 +1,31 @@
 <template>
-  <div class="img-container">
-    <svg ref="svg" class="svg-container" :width="img.width*scaleRect" :height="img.height*scaleRect" style="cursor:crosshair">
+  <div class="img-container" ref="svgContainer">
+    <svg ref="svg" class="rect-container"
+      :width="img.width*scaleRect" :height="img.height*scaleRect"
+      :style="`background-image:url(${img.url})`">
       <v-line :lineObj="line"/>
-      <g>
-        <rect v-for="( item, index ) in rects"
-        :key="index"
-        :x="item.x*scaleRect" :y="item.y*scaleRect"
-        :width="item.w*scaleRect" :height="item.h*scaleRect"
-        @click.stop.prevent="fixPointsHandle(index)"
-        @mousedown.stop.prevent="moveRectStart(index, $event)"
-        @mouseup="moveRectEnd"
-        :fill="svgColor" :stroke="svgColor"
-        style="stroke-width:2;fill-opacity:0.1;stroke-opacity:0.9;cursor:move"/>
-      </g>
-        <v-editpoint :fixedPoints="fixPoints" :activeRectIndex="activeRectIndex" @funcStart="changeRectPointStart" @funcEnd="changeRectPointEnd" :scaleRect="scaleRect"/>
+      <rect v-for="( item, index ) in rects"
+      :key="index"
+      :x="item.x*scaleRect" :y="item.y*scaleRect"
+      :width="item.w*scaleRect" :height="item.h*scaleRect"
+      @click.stop.prevent="fixPointsHandle(index)"
+      @mousedown.stop.prevent="moveRectStart(index, $event)"
+      @mouseup="moveRectEnd"
+      :fill="svgColor" :stroke="svgColor"
+      style="stroke-width:2;fill-opacity:0.1;stroke-opacity:0.9;cursor:move"/>
+      <v-editpoint :fixedPoints="fixPoints" :activeRectIndex="activeRectIndex" @funcStart="changeRectPointStart" @funcEnd="changeRectPointEnd" :scaleRect="scaleRect"/>
     </svg>
-    <img id="image" :src="img.url" :width="img.width*scaleRect" :height="img.height*scaleRect" alt="">
   </div>
 </template>
 
 <script>
-import imgUrl from '../../assets/test.jpg'
 import line from './utils/Line'
 import EditPoint from './utils/EditPoint'
 import vm from '@/utils/vm'
 export default {
+  props: [ 'img' ],
   data () {
     return {
-      img: { // 图片信息
-        url: imgUrl,
-        width: 1920,
-        height: 1080
-      },
       isDown: false, // 绘制矩形的开关
       fixDown: false, // 修改矩形的开关
       isMove: false, // 移动矩形的开关
@@ -54,6 +48,12 @@ export default {
         index: 0
       },
       scaleRect: 1, // 矩形缩放比例
+      svgPosition: { // 缩放图片时鼠标相对容器的位置
+        positionX: 0,
+        positionY: 0
+      },
+      svgTop: 0,
+      svgLeft: 0,
       svgColor: '#000000' // 边框颜色
     }
   },
@@ -72,6 +72,13 @@ export default {
   },
   mounted () {
     let svgElem = this.$refs.svg
+    let svgContainerElem = this.$refs.svgContainer
+    svgContainerElem.addEventListener('mousemove', (event) => {
+      let X = event.offsetX
+      let Y = event.offsetY
+      this.svgPosition.positionX = X
+      this.svgPosition.positionY = Y
+    })
     svgElem.addEventListener('mousedown', (event) => {
       this.isDown = true
       let initX = event.offsetX
@@ -137,8 +144,10 @@ export default {
       // event.wheelDeltaY的正负表示放大还是缩小
       if (event.wheelDeltaY > 0) {
         this.scaleRect += 0.1
+        // this.svgChangeHandle()
       } else if (event.wheelDeltaY < 0 && this.img.width * this.scaleRect > 320) {
         this.scaleRect -= 0.1
+        // this.svgChangeHandle()
       }
     })
     // 鼠标离开svg图层后退出编辑状态
@@ -148,6 +157,11 @@ export default {
     })
   },
   methods: {
+    // 缩放图片位置定位
+    svgChangeHandle () {
+      this.svgTop = this.svgPosition.positionY * (1 - this.scaleRect)
+      this.svgLeft = this.svgPosition.positionX * (1 - this.scaleRect)
+    },
     // 为矩形增加八个拖拽点
     fixPointsHandle (index) {
       this.activeRectIndex = index
@@ -284,9 +298,9 @@ export default {
       this.isMove = false
       this.fixDown = false
     },
+    // 删除矩形
     deleteRect () {
       let index = this.activeRectIndex
-      console.log(index)
       this.isDown = false
       if (index === -1) {
         alert('请先选择框再进行操作')
@@ -296,6 +310,12 @@ export default {
           this.rects.splice(index, 1)
         }
       }
+    }
+  },
+  watch: {
+    // rects发生变化的话将新数据传递给父组件
+    'rects': (newRects) => {
+      vm.$emit('getRectData', newRects)
     }
   },
   destroyed () { // 组件销毁时移除所有事件
@@ -308,20 +328,16 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .container{
   width: 100%;
   height: 100%;
   background: rgba(0,0,0,0.1);
 }
-.img-container{
-  padding: 0;
+.rect-container{
   position: relative;
-}
-.svg-container{
-  position: absolute;
-  left: 0;
-  top: 0;
   user-select:none;
+  cursor:crosshair;
+  background-size: 100% 100%;
 }
 </style>

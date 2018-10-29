@@ -1,8 +1,11 @@
 <template>
   <div class="operate-container">
-    <input type="button" value="delete" @click="deleteRect">
+    <input type="button" value="删除矩形" @click="deleteRect">
     <input type="color" name="color" v-model="color" @change="changeColor">
-    <input type="button" value="line" @click="toggleLine">
+    <input type="button" value="辅助线" @click="toggleLine">
+    <input type="button" value="删除多边形" @click="delectPolygon">
+    <input type="button" value="多边形标注完成" @click="completePolygon">
+    <input type="button" value="删除点" @click="deleteDot">
   </div>
 </template>
 
@@ -18,11 +21,20 @@ export default {
     deleteRect () {
       vm.$emit('deleteRect')
     },
+    delectPolygon () {
+      vm.$emit('delectPolygon')
+    },
     toggleLine () {
       vm.$emit('toggleLine')
     },
     changeColor () {
       vm.$emit('changeColor', this.color)
+    },
+    completePolygon () {
+      vm.$emit('completePolygon')
+    },
+    deleteDot () {
+      vm.$emit('deleteDot')
     }
   }
 }
