@@ -14,6 +14,7 @@
       :fill="svgColor" :stroke="svgColor"
       style="stroke-width:2;fill-opacity:0.1;stroke-opacity:0.9;cursor:move"/>
       <v-editpoint :fixedPoints="fixPoints" :activeRectIndex="activeRectIndex" @funcStart="changeRectPointStart" @funcEnd="changeRectPointEnd" :scaleRect="scaleRect"/>
+
     </svg>
   </div>
 </template>
@@ -317,14 +318,14 @@ export default {
     'rects': (newRects) => {
       vm.$emit('getRectData', newRects)
     }
-  },
-  destroyed () { // 组件销毁时移除所有事件
-    let svgElem = this.$refs.svg
-    svgElem.removeEventListener('mousedown', e => e.stopPropagation(), false)
-    svgElem.removeEventListener('mousemove', e => e.stopPropagation(), false)
-    svgElem.removeEventListener('mouseup', e => e.stopPropagation(), false)
-    svgElem.removeEventListener('mouseleave', e => e.stopPropagation(), false)
   }
+  // destroyed () { // 组件销毁时移除所有事件
+  //   let svgElem = this.$refs.svg
+  //   svgElem.removeEventListener('mousedown', e => e.stopPropagation(), false)
+  //   svgElem.removeEventListener('mousemove', e => e.stopPropagation(), false)
+  //   svgElem.removeEventListener('mouseup', e => e.stopPropagation(), false)
+  //   svgElem.removeEventListener('mouseleave', e => e.stopPropagation(), false)
+  // }
 }
 </script>
 
